@@ -1,0 +1,57 @@
+{
+  "bilibili": [
+    {
+      "name": "大家车言论",
+      "uid": "36044181"
+    },
+	 {
+      "name": "粤爱车",
+      "uid": "408422610"
+    }, {
+      "name": "大家车观察",
+      "uid": "3493275025541345"
+    }, {
+      "name": "智能车研究所",
+      "uid": "3546814473046548"
+    }, {
+      "name": "大家车-YYP",
+      "uid": "398326679"
+    }, {
+      "name": "袁启聪",
+      "uid": "502925577"
+    }, {
+      "name": "大家车-曾颖卓",
+      "uid": "31659234"
+    }
+  ],
+  "douyin": [
+    {
+      "name": "大家车言论",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAARLKJ_a-XJPh57V0sF1tesLRQMmxv9Q4DQ314W1SKCjE?from_tab_name=main"
+    },
+	 {
+      "name": "粤爱车",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAABegPKx8SlqBi7ygkVD1SBQenP522I3hfwshbbhum2aQxIsrqogsB9VyC0-7nVl3j?from_tab_name=main"
+    },
+	 {
+      "name": "大家车观察",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAAt90sbP9OcV9KrhoKhdyRiBTNVuM1k75QrkMHvWRdZwWrqZi7pciLM0hdqirKxP3C?from_tab_name=main"
+    },
+	 {
+      "name": "智能车研究所",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAAEiS_VUYdHHDtG_8USnYp3N-EnVHf6KB-oJM29HRKVVJ2BOO5WofSFOpaVV_gMWvj?from_tab_name=main"
+    },
+	 {
+      "name": "YYP颜宇鹏",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAABw-B4qfqMmbSbYL0d_S9IeEfBdt-lPQjktspRZ67aBk?from_tab_name=main"
+    },
+	 {
+      "name": "袁启聪",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAAJM1MjZHqM7Ek9K9JIQFZaY0TnTx0VeulS5_wsmA8WOs?from_tab_name=main"
+    },
+	 {
+      "name": "曾颖卓",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAA6kARwECgrqm4ykLocS_IDQDkkR9aHg6vmc4RYy4yPzI?from_tab_name=main"
+    }
+  ]
+}

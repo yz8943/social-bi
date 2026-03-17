@@ -1,0 +1,10 @@
+{
+  "name": "social-bi",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "bb-browser": "*",
+    "node-fetch": "^2.6.7",
+    "node-cron": "^3.0.3"
+  }
+}
