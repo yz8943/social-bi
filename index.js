@@ -1,142 +1,87 @@
-const fs = require("fs")
-const path = require("path")
-const { execSync } = require("child_process")
+#!/usr/bin/env node
+/**
+ * social-bi — 主入口
+ * 用法：node index.js
+ *       node index.js --dry-run   # 只抓数据，不发布
+ */
 
-// bb-browser 命令路径
-const BB_BROWSER = "bb-browser"
+const fs   = require('fs')
+const path = require('path')
+const { crawlBilibili } = require('./crawler/bilibili')
+const { crawlDouyin }   = require('./crawler/douyin')
+const { generate }      = require('./dashboard/generate-html')
+const { publish }       = require('./publisher/here')
 
-/* ========== 配置 ========== */
-const CONFIG = {
-  // B站账号配置
-  bilibili: {
-    accounts: [
-      { name: "袁启聪", uid: "502925577" },
-      { name: "大家车言论", uid: "36044181" },
-      { name: "大家车-YYP", uid: "398326679" },
-      { name: "粤爱车", uid: "408422610" },
-      { name: "大家车-曾颖卓", uid: "31659234" },
-      { name: "智能车研究所", uid: "3546814473046548" },
-      { name: "大家车观察", uid: "3493275025541345" },
-      { name: "瑶小受ribbon", uid: "5128686" }
-    ]
-  },
-  
-  // 抖音账号配置
-  douyin: {
-    accounts: [
-      { name: "大家车言论", url: "https://www.douyin.com/user/MS4wLjABAAAARLKJ_a-XJPh57V0sF1tesLRQMmxv9Q4DQ314W1SKCjE" },
-      { name: "粤爱车", url: "https://www.douyin.com/user/MS4wLjABAAAABegPKx8SlqBi7ygkVD1SBQenP522I3hfwshbbhum2aQxIsrqogsB9VyC0-7nVl3j" },
-      { name: "大家车观察", url: "https://www.douyin.com/user/MS4wLjABAAAAt90sbP9OcV9KrhoKhdyRiBTNVuM1k75QrkMHvWRdZwWrqZi7pciLM0hdqirKxP3C" },
-      { name: "智能车研究所", url: "https://www.douyin.com/user/MS4wLjABAAAAEiS_VUYdHHDtG_8USnYp3N-EnVHf6KB-oJM29HRKVVJ2BOO5WofSFOpaVV_gMWvj" },
-      { name: "YYP颜宇鹏", url: "https://www.douyin.com/user/MS4wLjABAAAABw-B4qfqMmbSbYL0d_S9IeEfBdt-lPQjktspRZ67aBk" },
-      { name: "袁启聪", url: "https://www.douyin.com/user/MS4wLjABAAAAJM1MjZHqM7Ek9K9JIQFZaY0TnTx0VeulS5_wsmA8WOs" },
-      { name: "曾颖卓", url: "https://www.douyin.com/user/MS4wLjABAAAA6kARwECgrqm4ykLocS_IDQDkkR9aHg6vmc4RYy4yPzI" }
-    ]
-  },
-  
-  // 输出配置
-  output: {
-    dataPath: "./data.json",
-    dashboardPath: "./output/dashboard.html"
-  }
-}
+const CONFIG_PATH = path.join(__dirname, 'config', 'accounts.json')
+const DATA_PATH   = path.join(__dirname, 'data.json')
 
-/* ========== 主函数 ========== */
+const DRY_RUN = process.argv.includes('--dry-run')
+
+/* ════════════════════════════════
+   主流程
+════════════════════════════════ */
 async function run() {
-  console.log("🚀 开始抓取数据...")
-  
-  // 1. 抓取 B站数据
-  const bilibiliData = await fetchBilibiliData()
-  
-  // 2. 抓取抖音数据
-  const douyinData = await fetchDouyinData()
-  
-  // 3. 合并数据
-  const allData = [...bilibiliData, ...douyinData]
-  
-  // 4. 保存数据
-  fs.writeFileSync(CONFIG.output.dataPath, JSON.stringify(allData, null, 2)
-  console.log(`✅ 数据已保存到 ${CONFIG.output.dataPath}`)
-  
-  // 5. 生成看板
-  const { generate } = require("./dashboard/generate-html")
-  const html = generate(allData)
-  
-  // 6. 发布
-  const { publish } = require("./publisher/here")
-  await publish(html)
-  
-  console.log("🎉 完成！")
-}
+  console.log('🚀 开始抓取数据...\n')
 
-/* ========== B站数据抓取 ========== */
-async function fetchBilibiliData() {
+  // 读取账号配置
+  const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'))
+
   const results = []
-  
-  for (const account of CONFIG.bilibili.accounts) {
-    try {
-      console.log(`📡 抓取 B站: ${account.name}...`)
-      
-      const cmd = `${BB_BROWSER} site bilibili/space ${account.uid} --json`
-      const output = execSync(cmd, { encoding: "utf8", stdio: ["pipe", "pipe1", "pipe2"] })
-      
-      let stdout = ""
-      let stderr = ""
-      
-      output.stdout.on("data", (data) => {
-        stdout += data
-      })
-      
-      output.stderr.on("data", (data) => {
-        stderr += data
-      })
-      
-      output.on("close", (code) => {
-        try {
-          const json = JSON.parse(stdout)
-          results.push({
-            platform: "bilibili",
-            name: account.name,
-            uid: account.uid,
-            url: `https://space.bilibili.com/${account.uid}`,
-            followers: formatNumber(json.followers),
-            likes: formatNumber(json.likes),
-            views: formatNumber(json.views),
-            videos: json.videos || "未知"
-          })
-        } catch (e) {
-          console.error(`解析 B站数据失败: ${account.name}:`, e.message)
-        }
-      })
-    } catch (e) {
-      console.error(`抓取 B站数据失败 ${account.name}:`, e.message)
-    }
+
+  // ── B站 ──
+  console.log(`\n── B站 (${config.bilibili.length} 个账号) ──`)
+  for (const account of config.bilibili) {
+    const data = await crawlBilibili(account)
+    results.push(data)
+    await sleep(1500) // 避免请求过快
   }
-  
-  return results
+
+  // ── 抖音 ──
+  console.log(`\n── 抖音 (${config.douyin.length} 个账号) ──`)
+  for (const account of config.douyin) {
+    const data = await crawlDouyin(account)
+    results.push(data)
+    await sleep(2000)
+  }
+
+  // ── 保存数据 ──
+  fs.writeFileSync(DATA_PATH, JSON.stringify(results, null, 2))
+  console.log(`\n✅ 数据已保存 → ${DATA_PATH}`)
+  console.log(`   共 ${results.length} 条记录 (B站 ${results.filter(r=>r.platform==='bilibili').length} / 抖音 ${results.filter(r=>r.platform==='douyin').length})`)
+
+  // ── 生成并发布 ──
+  const html = generate(results)
+
+  if (DRY_RUN) {
+    const outPath = path.join(__dirname, 'output', 'dashboard.html')
+    fs.mkdirSync(path.dirname(outPath), { recursive: true })
+    fs.writeFileSync(outPath, html)
+    console.log(`\n[dry-run] HTML 已保存 → ${outPath}`)
+    return
+  }
+
+  console.log('\n📤 发布中...')
+  const result = await publish(html)
+
+  if (result) {
+    console.log(`\n🎉 发布成功！`)
+    console.log(`   🌐 ${result.siteUrl}`)
+  } else {
+    console.error('\n❌ 发布失败')
+    process.exit(1)
+  }
 }
 
-/* ========== 抖音数据抓取（使用浏览器) ========== */
-async function fetchDouyinData() {
-  console.log("⚠️ 抖音需要使用浏览器手动抓取...")
-  console.log("提示: 请在浏览器中登录抖音后，按 [Enter] 继续...")
-  
-  // 暂时返回空数组，实际抓取需要浏览器
-  return []
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms))
 }
 
-/* ========== 数字格式化 ========== */
-function formatNumber(num) {
-  if (!num) return "0"
-  if (num >= 100000000) return (num / 100000000).toFixed(1) + "亿"
-  if (num >= 10000) return (num / 10000).toFixed(1) + "万"
-  return num.toString()
+// ── CLI 入口 ──
+if (require.main === module) {
+  run().catch(err => {
+    console.error('💥 运行出错:', err)
+    process.exit(1)
+  })
 }
 
-// 导出
 module.exports = { run }
-
-// 如果作为 CLI 直接运行
-if (require.main === module.parent) {
-  run().catch(console.error)
-}
