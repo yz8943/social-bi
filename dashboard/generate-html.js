@@ -3,16 +3,23 @@ function generate(data) {
   const douyinData   = data.filter(a => a.platform === 'douyin')
   const updatedAt    = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
 
-  // B站头像通过 proxy API 绕过防盗链（使用 images.weserv.nl 公共代理）
+  // B站头像通过 weserv.nl 代理绕过防盗链
   function biliAvatarSrc(face) {
     if (!face || !face.startsWith('http')) return ''
-    // weserv.nl 代理，去掉 https:// 前缀
     const stripped = face.replace(/^https?:\/\//, '')
     return `https://images.weserv.nl/?url=${encodeURIComponent(stripped)}&w=128&h=128&fit=cover`
   }
 
-  const BILI_DEFAULT = 'https://i0.hdslb.com/bfs/face/member/noface.jpg'
-  const DY_DEFAULT   = 'https://p3.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_a68c0003a7f3cb20af60.jpeg'
+  // 根据名字生成稳定的背景色（无头像时用）
+  function nameColor(name) {
+    const colors = [
+      '#FF6B6B','#FF8E53','#FFC107','#66BB6A','#26C6DA',
+      '#5C6BC0','#AB47BC','#EC407A','#8D6E63','#78909C'
+    ]
+    let hash = 0
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+    return colors[Math.abs(hash) % colors.length]
+  }
 
   function card(a) {
     const isBili = a.platform === 'bilibili'
@@ -32,24 +39,33 @@ function generate(data) {
           { label: '获赞', value: a.likes     }
         ]
 
-    // 头像处理
+    // 头像：有 URL → 显示图片；无 URL → 名字首字 + 背景色
+    const hasAvatar = a.avatar && a.avatar.startsWith('http')
+    const initial   = a.name ? a.name.charAt(0) : '?'
+    const bgColor   = nameColor(a.name || '')
+
     let avatarHtml
-    if (isBili) {
-      // B站：用代理绕过防盗链，onerror 降级
-      const proxySrc = biliAvatarSrc(a.avatar)
-      const fallback = BILI_DEFAULT
-      avatarHtml = proxySrc
-        ? `<img src="${proxySrc}" alt="${a.name}" onerror="this.onerror=null;this.src='${fallback}'">`
-        : `<img src="${fallback}" alt="${a.name}">`
+    if (hasAvatar) {
+      if (isBili) {
+        // B站：代理绕防盗链，失败则显示文字头像
+        const proxySrc = biliAvatarSrc(a.avatar)
+        avatarHtml = `<img src="${proxySrc}" alt="${a.name}"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          + `<span class="avatar-fallback" style="background:${bgColor};display:none">${initial}</span>`
+      } else {
+        // 抖音：直接用 URL，失败显示文字头像
+        avatarHtml = `<img src="${a.avatar}" alt="${a.name}"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          + `<span class="avatar-fallback" style="background:${bgColor};display:none">${initial}</span>`
+      }
     } else {
-      // 抖音：头像无法直接展示（跨域+防盗链），用平台色块+首字作为替代
-      const initial = a.name ? a.name.charAt(0) : '音'
-      avatarHtml = `<div class="avatar-text dy-avatar">${initial}</div>`
+      // 无头像：直接显示文字头像
+      avatarHtml = `<span class="avatar-fallback" style="background:${bgColor}">${initial}</span>`
     }
 
     return `
     <div class="card">
-      <a class="avatar" href="${a.url || '#'}" target="_blank" rel="noopener">${avatarHtml}</a>
+      <a class="avatar-wrap" href="${a.url || '#'}" target="_blank" rel="noopener">${avatarHtml}</a>
       <div class="info">
         <div class="name-row">
           <a class="name" href="${a.url || '#'}" target="_blank" rel="noopener">${a.name}</a>
@@ -103,18 +119,21 @@ function generate(data) {
       box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: box-shadow 0.2s;
     }
     .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
-    .avatar {
+    /* 头像容器 */
+    .avatar-wrap {
       flex-shrink: 0; width: 64px; height: 64px; border-radius: 50%;
-      overflow: hidden; background: #eee; display: block;
+      overflow: hidden; display: block; position: relative;
     }
-    .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    /* 抖音：文字头像 */
-    .avatar-text {
-      width: 100%; height: 100%; display: flex; align-items: center;
-      justify-content: center; font-size: 22px; font-weight: 700; color: #fff;
+    .avatar-wrap img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    /* 文字头像（无图或加载失败时） */
+    .avatar-fallback {
+      width: 100%; height: 100%; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 700; color: #fff;
       border-radius: 50%;
     }
-    .dy-avatar { background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%); }
     .info { flex: 1; min-width: 0; }
     .name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
     .name {
