@@ -99,6 +99,9 @@ async function crawlDouyin(account) {
     return base
   }
 
+  // ── 提取头像 ──
+  const avatar = fetchAvatarFromPage(url)
+
   // ── 提取：优先复合 div ──
   const compositeMatch = snapshot.match(/- div "关注 ([\d.万亿]+) 粉丝 ([\d.万亿]+) 获赞 ([\d.万亿]+)" <div>/)
   if (compositeMatch) {
@@ -107,8 +110,8 @@ async function crawlDouyin(account) {
     const likes     = compositeMatch[3]
     const videosM   = snapshot.match(/- (?:heading|tab) "作品 (\d+)"/)
     const videos    = videosM ? videosM[1] : '0'
-    console.log(`  ✅ ${name}: 粉丝 ${followers}, 关注 ${following}, 获赞 ${likes}, 作品 ${videos}`)
-    return { ...base, followers, following, likes, videos }
+    console.log(`  ✅ ${name}: 粉丝 ${followers}, 关注 ${following}, 获赞 ${likes}, 作品 ${videos}, 头像 ${avatar ? '✓' : '✗'}`)
+    return { ...base, followers, following, likes, videos, avatar }
   }
 
   // ── 降级：逐字段，取最后一次（目标账号在登录菜单之后出现）──
@@ -119,14 +122,14 @@ async function crawlDouyin(account) {
   const videos    = videosM ? videosM[1] : '0'
 
   if (followers !== '0' || likes !== '0') {
-    console.log(`  ✅ ${name} (降级): 粉丝 ${followers}, 获赞 ${likes}, 作品 ${videos}`)
-    return { ...base, followers, following, likes, videos }
+    console.log(`  ✅ ${name} (降级): 粉丝 ${followers}, 获赞 ${likes}, 作品 ${videos}, 头像 ${avatar ? '✓' : '✗'}`)
+    return { ...base, followers, following, likes, videos, avatar }
   }
 
   const relevant = snapshot.split('\n')
     .filter(l => /粉丝|获赞|关注|作品/.test(l)).slice(0, 8)
   console.warn(`  ⚠️  ${name}: 未能提取数据，相关行:`, relevant.join(' | ') || '无')
-  return base
+  return { ...base, avatar }
 }
 
 function runCmd(cmd) {
@@ -140,6 +143,36 @@ function runCmd(cmd) {
 
 function sleep(ms) {
   return new Promise(r => setTimeout(r, ms))
+}
+
+/**
+ * 从抖音用户主页 HTML 提取头像 URL
+ * 页面 RENDER_DATA 中包含 avatarUrl 字段
+ */
+function fetchAvatarFromPage(url) {
+  try {
+    const html = runCmd(`bb-browser fetch "${url}" --openclaw`)
+    // 优先：签名头像 URL（p{n}-pc-sign.douyinpic.com，画质更好）
+    const signedMatch = html.match(/avatarUrl[^,]*?https:\\u002F\\u002Fp[0-9]+-pc-sign\.douyinpic\.com\\u002F[^"\\]+/)
+    if (signedMatch) {
+      return decodeURIComponent(
+        signedMatch[0].replace(/^avatarUrl[^,]*?/, '').replace(/\\u002F/g, '/').replace(/\\u0026/g, '&').replace(/\\u0025/g, '%')
+      )
+    }
+    // 备用 1：avatarUrl 字段中的 douyinpic URL
+    const avatarMatch = html.match(/avatarUrl[^"]*"(https?:\/\/[^"\\]+douyinpic[^"\\]*aweme-avatar[^"\\]*\.(?:jpeg|webp|jpg)[^"\\]*)/)
+    if (avatarMatch) {
+      return avatarMatch[1].replace(/\\u0026/g, '&').replace(/\\u0025/g, '%').replace(/&amp;/g, '&')
+    }
+    // 备用 2：页面中任意 douyinpic 头像 URL
+    const urlMatch = html.match(/(https:\/\/p[0-9]+-pc\.douyinpic\.com\/aweme[^"'\s\\]*aweme-avatar[^"'\s\\]*\.(?:jpeg|webp|jpg)[^"'\s\\]*)/)
+    if (urlMatch) {
+      return urlMatch[1].replace(/\\u0026/g, '&').replace(/\\u0025/g, '%').replace(/&amp;/g, '&')
+    }
+  } catch (e) {
+    console.warn(`  ⚠️  头像获取失败:`, e.message.split('\n')[0])
+  }
+  return ''
 }
 
 function extractLast(text, regex) {
