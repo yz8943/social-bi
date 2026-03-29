@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<tr>
+<td>{{row.账号}}</td>
+<td>{{row.播放增长}}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+
+<h2>视频排行榜</h2>
+
+<table border="1">
+<tr>
+<th>标题</th>
+<th>播放增长</th>
+</tr>
+
+{% for row in video_rank %}
+<tr>
+<td>{{row.标题}}</td>
+<td>{{row.播放增长}}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+<script>
+
+var data = {{trend | safe}}
+
+var dates = []
+var values = []
+
+for(var i=0;i<data.length;i++){
+
+    dates.push(data[i].日期)
+    values.push(data[i].播放增长)
+}
+
+var chart = echarts.init(
+    document.getElementById('trend')
+)
+
+chart.setOption({
+
+    xAxis:{
+        type:'category',
+        data:dates
+    },
+
+    yAxis:{
+        type:'value'
+    },
+
+    series:[{
+        data:values,
+        type:'line'
+    }]
+
+})
+
+</script>
+
+
+</body>
+
+</html>
