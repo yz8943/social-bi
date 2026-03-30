@@ -2,9 +2,7 @@ from playwright.sync_api import sync_playwright
 import os
 
 ACCOUNTS = [
-    "账号A",
-    "账号B",
-    "账号C"
+    "Kerry学英语",
 ]
 
 os.makedirs("accounts", exist_ok=True)

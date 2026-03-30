@@ -7,9 +7,7 @@ from playwright.sync_api import sync_playwright
 LIST_URL = "https://member.bilibili.com/platform/upload-manager/article"
 
 ACCOUNTS = {
-    "账号A.json": "账号A",
-    "账号B.json": "账号B",
-    "账号C.json": "账号C",
+    "Kerry学英语.json": "Kerry学英语",
 }
 
 HISTORY = "history.xlsx"
