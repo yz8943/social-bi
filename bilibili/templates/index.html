@@ -2,71 +2,409 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>B站数据看板</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
-        h1 { color: #fb7299; }
-        h2 { margin-top: 40px; color: #333; }
-        .tip { color: #999; font-size: 13px; margin: 4px 0 10px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 10px; background: #fff; }
-        th, td { border: 1px solid #e0e0e0; padding: 8px 14px; text-align: left; }
-        th { background: #fafafa; font-weight: bold; }
-        tr:hover td { background: #fff5f8; }
-        #trend { width: 100%; height: 400px; margin-top: 10px; background: #fff; }
+        :root {
+            --pink:    #fb7299;
+            --pink2:   #ff93b0;
+            --dark:    #0f0f13;
+            --card:    #1a1a22;
+            --border:  #2a2a38;
+            --text:    #e8e8f0;
+            --muted:   #7878a0;
+            --green:   #4ade80;
+            --yellow:  #facc15;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--dark);
+            color: var(--text);
+            font-family: 'Noto Sans SC', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* ── 顶栏 ── */
+        .topbar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 32px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(251,114,153,.06);
+        }
+        .topbar-logo { display: flex; align-items: center; gap: 10px; }
+        .topbar-logo .dot {
+            width: 28px; height: 28px; border-radius: 8px;
+            background: var(--pink); display: grid; place-items: center;
+            font-size: 14px; font-weight: 700; color: #fff;
+        }
+        .topbar-logo span { font-size: 15px; font-weight: 700; letter-spacing: .03em; }
+        .topbar-date {
+            font-family: 'DM Mono', monospace; font-size: 12px;
+            color: var(--muted); background: var(--card);
+            padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);
+        }
+        .badge-warn {
+            font-size: 11px; color: var(--yellow);
+            background: rgba(250,204,21,.1); border: 1px solid rgba(250,204,21,.3);
+            border-radius: 20px; padding: 4px 10px;
+        }
+
+        /* ── 布局 ── */
+        .main { max-width: 1280px; margin: 0 auto; padding: 28px 24px 60px; }
+        .section-title {
+            font-size: 11px; font-weight: 700; letter-spacing: .12em;
+            text-transform: uppercase; color: var(--muted);
+            margin-bottom: 14px; margin-top: 36px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .section-title::before {
+            content: ''; width: 3px; height: 13px;
+            background: var(--pink); border-radius: 2px;
+        }
+
+        /* ── KPI 卡片 ── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+            gap: 12px;
+        }
+        .kpi-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 18px 16px;
+            position: relative; overflow: hidden;
+            transition: transform .2s, border-color .2s;
+        }
+        .kpi-card:hover { transform: translateY(-2px); border-color: var(--pink); }
+        .kpi-card.accent { border-color: rgba(251,114,153,.4); background: rgba(251,114,153,.07); }
+        .kpi-card .icon {
+            font-size: 18px; margin-bottom: 10px; display: block;
+        }
+        .kpi-card .label {
+            font-size: 11px; color: var(--muted); margin-bottom: 6px;
+        }
+        .kpi-card .value {
+            font-family: 'DM Mono', monospace;
+            font-size: 22px; font-weight: 500; color: var(--text);
+            letter-spacing: -.01em;
+        }
+        .kpi-card.accent .value { color: var(--pink); }
+        .kpi-card .glow {
+            position: absolute; bottom: -20px; right: -20px;
+            width: 70px; height: 70px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(251,114,153,.18) 0%, transparent 70%);
+        }
+
+        /* ── 图表区 ── */
+        .chart-row { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+        .chart-box {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px;
+        }
+        .chart-box .chart-title {
+            font-size: 13px; font-weight: 600; color: var(--text);
+            margin-bottom: 16px;
+        }
+        #trendChart { width: 100%; height: 280px; }
+        #pieChart   { width: 100%; height: 280px; }
+
+        /* ── 榜单 ── */
+        .rank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .rank-table {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 14px; overflow: hidden;
+        }
+        .rank-table table { width: 100%; border-collapse: collapse; }
+        .rank-table thead tr {
+            background: rgba(251,114,153,.08);
+            border-bottom: 1px solid var(--border);
+        }
+        .rank-table th {
+            padding: 11px 14px; font-size: 11px; font-weight: 700;
+            letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+            text-align: left;
+        }
+        .rank-table td {
+            padding: 10px 14px; font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+        }
+        .rank-table tr:last-child td { border-bottom: none; }
+        .rank-table tbody tr:hover td { background: rgba(251,114,153,.05); }
+        .rank-no {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px; font-weight: 500;
+            color: var(--muted); width: 24px;
+        }
+        .rank-no.top { color: var(--pink); }
+        .num-cell {
+            font-family: 'DM Mono', monospace; font-size: 13px;
+            color: var(--pink2); text-align: right;
+        }
+        .title-cell {
+            max-width: 160px; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* ── 全量数据表 ── */
+        .data-table-wrap {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 14px; overflow: auto;
+        }
+        .data-table-wrap table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        .data-table-wrap thead tr {
+            background: rgba(251,114,153,.08);
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0;
+        }
+        .data-table-wrap th {
+            padding: 10px 14px; font-size: 11px; font-weight: 700;
+            letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+            text-align: left; white-space: nowrap;
+        }
+        .data-table-wrap td {
+            padding: 9px 14px; font-size: 12.5px;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+        }
+        .data-table-wrap tr:last-child td { border-bottom: none; }
+        .data-table-wrap tbody tr:hover td { background: rgba(251,114,153,.04); }
+        .data-table-wrap .mono {
+            font-family: 'DM Mono', monospace; color: var(--muted); font-size: 11px;
+        }
+        .bar-wrap { display: flex; align-items: center; gap: 8px; }
+        .bar-bg {
+            flex: 1; height: 4px; background: var(--border);
+            border-radius: 2px; overflow: hidden; min-width: 40px;
+        }
+        .bar-fill { height: 100%; background: var(--pink); border-radius: 2px; }
+        .tag-num { font-family: 'DM Mono', monospace; font-size: 12px; white-space: nowrap; }
     </style>
 </head>
 <body>
 
-<h1>B站数据看板</h1>
-<p class="tip">数据日期：{{ latest_date }}
-    {% if not has_growth %}
-    　⚠️ 当前只有一天数据，暂时显示累计播放量；明天运行后将显示播放增长。
-    {% endif %}
-</p>
+<div class="topbar">
+    <div class="topbar-logo">
+        <div class="dot">B</div>
+        <span>哔哩哔哩数据看板</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+        {% if not has_growth %}
+        <span class="badge-warn">⚠ 首次运行，显示累计播放量</span>
+        {% endif %}
+        <span class="topbar-date">{{ latest_date }}</span>
+    </div>
+</div>
 
-<h2>账号排行榜</h2>
-<p class="tip">{{ "播放增长" if has_growth else "今日播放量" }}</p>
-<table>
-    <tr><th>账号</th><th>{{ "播放增长" if has_growth else "播放量" }}</th></tr>
-    {% for row in account_rank %}
-    <tr>
-        <td>{{ row.账号 }}</td>
-        <td>{{ row.播放增长 | int }}</td>
-    </tr>
-    {% endfor %}
-</table>
+<div class="main">
 
-<h2>视频排行榜</h2>
-<p class="tip">{{ "播放增长 Top 10" if has_growth else "播放量 Top 10" }}</p>
-<table>
-    <tr><th>标题</th><th>{{ "播放增长" if has_growth else "播放量" }}</th></tr>
-    {% for row in video_rank %}
-    <tr>
-        <td>{{ row.标题 }}</td>
-        <td>{{ row.播放增长 | int }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <!-- KPI -->
+    <div class="section-title">核心指标</div>
+    <div class="kpi-grid">
+        <div class="kpi-card accent">
+            <span class="icon">▶</span>
+            <div class="label">总播放量</div>
+            <div class="value" id="kv-play">{{ total_plays }}</div>
+            <div class="glow"></div>
+        </div>
+        {% if has_growth %}
+        <div class="kpi-card">
+            <span class="icon">📈</span>
+            <div class="label">今日播放增长</div>
+            <div class="value">{{ total_growth }}</div>
+        </div>
+        {% endif %}
+        <div class="kpi-card">
+            <span class="icon">👍</span>
+            <div class="label">点赞</div>
+            <div class="value">{{ total_likes }}</div>
+        </div>
+        <div class="kpi-card">
+            <span class="icon">💬</span>
+            <div class="label">评论</div>
+            <div class="value">{{ total_comments }}</div>
+        </div>
+        <div class="kpi-card">
+            <span class="icon">🪙</span>
+            <div class="label">投币</div>
+            <div class="value">{{ total_coins }}</div>
+        </div>
+        <div class="kpi-card">
+            <span class="icon">⭐</span>
+            <div class="label">收藏</div>
+            <div class="value">{{ total_collect }}</div>
+        </div>
+        <div class="kpi-card">
+            <span class="icon">↗</span>
+            <div class="label">分享</div>
+            <div class="value">{{ total_share }}</div>
+        </div>
+        <div class="kpi-card">
+            <span class="icon">⚡</span>
+            <div class="label">弹幕</div>
+            <div class="value">{{ total_danmu }}</div>
+        </div>
+    </div>
 
-<h2>播放趋势</h2>
-<div id="trend"></div>
+    <!-- 趋势 + 互动分布 -->
+    <div class="section-title">数据趋势</div>
+    <div class="chart-row">
+        <div class="chart-box">
+            <div class="chart-title">播放趋势</div>
+            <div id="trendChart"></div>
+        </div>
+        <div class="chart-box">
+            <div class="chart-title">互动数据分布</div>
+            <div id="pieChart"></div>
+        </div>
+    </div>
+
+    <!-- 排行榜 -->
+    <div class="section-title">排行榜</div>
+    <div class="rank-grid">
+
+        <div class="rank-table">
+            <table>
+                <thead><tr>
+                    <th></th><th>账号</th>
+                    <th style="text-align:right">{{ "播放增长" if has_growth else "播放量" }}</th>
+                </tr></thead>
+                <tbody>
+                {% for row in account_rank %}
+                <tr>
+                    <td><span class="rank-no {% if loop.index <= 3 %}top{% endif %}">
+            {{ loop.index }}
+          </span></td>
+                    <td>{{ row.账号 }}</td>
+                    <td class="num-cell">
+                        {{ (row.播放增长 | int) if row.播放增长 else 0 }}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="rank-table">
+            <table>
+                <thead><tr>
+                    <th></th><th>视频标题</th>
+                    <th style="text-align:right">{{ "播放增长" if has_growth else "播放量" }}</th>
+                </tr></thead>
+                <tbody>
+                {% for row in video_rank %}
+                <tr>
+                    <td><span class="rank-no {% if loop.index <= 3 %}top{% endif %}">
+            {{ loop.index }}
+          </span></td>
+                    <td class="title-cell" title="{{ row.标题 }}">{{ row.标题 }}</td>
+                    <td class="num-cell">
+                        {% if has_growth %}
+                        {{ (row.播放增长 | int) if row.播放增长 else 0 }}
+                        {% else %}
+                        {{ (row.播放量 | int) if row.播放量 else 0 }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- 全量数据 -->
+    <div class="section-title">全部视频数据</div>
+    <div class="data-table-wrap" id="fullTable"></div>
+
+</div><!-- /main -->
 
 <script>
-    var data = {{ trend | safe }};
-    var dates = data.map(function(d){ return d["日期"]; });
-    var values = data.map(function(d){ return d["播放增长"]; });
+    // ── 趋势图 ──────────────────────────────────────────────────────
+    var trendData = {{ trend | safe }};
+    var trendDates  = trendData.map(function(d){ return d["日期"]; });
+    var trendValues = trendData.map(function(d){ return d["播放增长"] || 0; });
 
-    var chart = echarts.init(document.getElementById('trend'));
-    chart.setOption({
-        tooltip: { trigger: 'axis' },
-        xAxis: { type: 'category', data: dates },
-        yAxis: { type: 'value' },
-        series: [{ data: values, type: 'line', smooth: true,
-            itemStyle: { color: '#fb7299' },
-            areaStyle: { color: 'rgba(251,114,153,0.1)' } }]
+    var tc = echarts.init(document.getElementById('trendChart'), null, {renderer:'canvas'});
+    tc.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger:'axis', backgroundColor:'#1a1a22', borderColor:'#2a2a38',
+            textStyle:{ color:'#e8e8f0', fontSize:12 } },
+        grid: { top:10, right:10, bottom:28, left:50 },
+        xAxis: { type:'category', data:trendDates,
+            axisLine:{ lineStyle:{ color:'#2a2a38' } },
+            axisTick:{ show:false },
+            axisLabel:{ color:'#7878a0', fontSize:11 } },
+        yAxis: { type:'value',
+            splitLine:{ lineStyle:{ color:'#2a2a38', type:'dashed' } },
+            axisLabel:{ color:'#7878a0', fontSize:11 } },
+        series:[{
+            data: trendValues, type:'line', smooth:true,
+            symbol:'circle', symbolSize:5,
+            itemStyle:{ color:'#fb7299' },
+            lineStyle:{ color:'#fb7299', width:2 },
+            areaStyle:{ color:{ type:'linear', x:0,y:0,x2:0,y2:1,
+                    colorStops:[{offset:0,color:'rgba(251,114,153,.25)'},{offset:1,color:'rgba(251,114,153,0)'}] } }
+        }]
+    });
+
+    // ── 互动饼图 ─────────────────────────────────────────────────────
+    var pieData = [
+        { value: {{ total_likes }},    name: '点赞' },
+    { value: {{ total_comments }}, name: '评论' },
+    { value: {{ total_coins }},    name: '投币' },
+    { value: {{ total_collect }},  name: '收藏' },
+    { value: {{ total_share }},    name: '分享' },
+    { value: {{ total_danmu }},    name: '弹幕' },
+    ].filter(function(d){ return d.value > 0; });
+
+    var pc = echarts.init(document.getElementById('pieChart'), null, {renderer:'canvas'});
+    pc.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger:'item', backgroundColor:'#1a1a22', borderColor:'#2a2a38',
+            textStyle:{ color:'#e8e8f0', fontSize:12 },
+            formatter:'{b}: {c} ({d}%)' },
+        color: ['#fb7299','#ff93b0','#ffb3c6','#ffd6e2','#4ade80','#facc15'],
+        series:[{
+            type:'pie', radius:['42%','68%'],
+            center:['50%','52%'],
+            data: pieData,
+            label:{ color:'#7878a0', fontSize:11 },
+            emphasis:{ itemStyle:{ shadowBlur:12, shadowColor:'rgba(251,114,153,.4)' } }
+        }]
+    });
+
+    // ── 全量数据表 ────────────────────────────────────────────────────
+    var tableData = {{ table_data | safe }};
+    if (tableData.length === 0) {
+        document.getElementById('fullTable').innerHTML = '<p style="padding:20px;color:#7878a0">暂无数据</p>';
+    } else {
+        var maxPlay = Math.max.apply(null, tableData.map(function(r){ return r['播放量'] || 0; }));
+        var cols = ['BV号','标题','播放量','点赞','弹幕','评论','投币','收藏','分享'];
+        var headers = cols.map(function(c){
+            return '<th>' + c + '</th>';
+        }).join('');
+
+        var rows = tableData.map(function(r){
+            var cells = cols.map(function(c){
+                if (c === 'BV号') return '<td class="mono">' + (r[c]||'') + '</td>';
+                if (c === '标题') return '<td class="title-cell" style="max-width:200px" title="'+(r[c]||'')+'">' + (r[c]||'-') + '</td>';
+                if (c === '播放量') {
+                    var v = r[c] || 0;
+                    var pct = maxPlay > 0 ? (v / maxPlay * 100).toFixed(1) : 0;
+                    return '<td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%"></div></div><span class="tag-num">'+v+'</span></div></td>';
+                }
+                return '<td class="num-cell">' + (r[c] !== null && r[c] !== undefined ? r[c] : '-') + '</td>';
+            }).join('');
+            return '<tr>' + cells + '</tr>';
+        }).join('');
+
+        document.getElementById('fullTable').innerHTML =
+            '<table><thead><tr>' + headers + '</tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    window.addEventListener('resize', function(){
+        tc.resize(); pc.resize();
     });
 </script>
-
 </body>
 </html>
