@@ -8,176 +8,120 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <style>
         :root {
-            --pink:    #fb7299;
-            --pink2:   #ff93b0;
-            --dark:    #0f0f13;
-            --card:    #1a1a22;
-            --border:  #2a2a38;
-            --text:    #e8e8f0;
-            --muted:   #7878a0;
-            --green:   #4ade80;
-            --yellow:  #facc15;
+            --pink:#fb7299;--pink2:#ff93b0;--dark:#0f0f13;--card:#1a1a22;
+            --border:#2a2a38;--text:#e8e8f0;--muted:#7878a0;--yellow:#facc15;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background: var(--dark);
-            color: var(--text);
-            font-family: 'Noto Sans SC', sans-serif;
-            min-height: 100vh;
-        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:var(--dark);color:var(--text);font-family:'Noto Sans SC',sans-serif;min-height:100vh}
 
-        /* ── 顶栏 ── */
-        .topbar {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 18px 32px;
-            border-bottom: 1px solid var(--border);
-            background: rgba(251,114,153,.06);
-        }
-        .topbar-logo { display: flex; align-items: center; gap: 10px; }
-        .topbar-logo .dot {
-            width: 28px; height: 28px; border-radius: 8px;
-            background: var(--pink); display: grid; place-items: center;
-            font-size: 14px; font-weight: 700; color: #fff;
-        }
-        .topbar-logo span { font-size: 15px; font-weight: 700; letter-spacing: .03em; }
-        .topbar-date {
-            font-family: 'DM Mono', monospace; font-size: 12px;
-            color: var(--muted); background: var(--card);
-            padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);
-        }
-        .badge-warn {
-            font-size: 11px; color: var(--yellow);
-            background: rgba(250,204,21,.1); border: 1px solid rgba(250,204,21,.3);
-            border-radius: 20px; padding: 4px 10px;
-        }
+        .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;
+            border-bottom:1px solid var(--border);background:rgba(251,114,153,.05);
+            position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+        .topbar-logo{display:flex;align-items:center;gap:10px}
+        .topbar-logo .dot{width:28px;height:28px;border-radius:8px;background:var(--pink);
+            display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff}
+        .topbar-logo span{font-size:15px;font-weight:700}
+        .topbar-right{display:flex;gap:10px;align-items:center}
+        .topbar-date{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);
+            background:var(--card);padding:5px 12px;border-radius:20px;border:1px solid var(--border)}
+        .badge-warn{font-size:11px;color:var(--yellow);background:rgba(250,204,21,.1);
+            border:1px solid rgba(250,204,21,.25);border-radius:20px;padding:4px 10px}
 
-        /* ── 布局 ── */
-        .main { max-width: 1280px; margin: 0 auto; padding: 28px 24px 60px; }
-        .section-title {
-            font-size: 11px; font-weight: 700; letter-spacing: .12em;
-            text-transform: uppercase; color: var(--muted);
-            margin-bottom: 14px; margin-top: 36px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .section-title::before {
-            content: ''; width: 3px; height: 13px;
-            background: var(--pink); border-radius: 2px;
-        }
+        .account-bar{display:flex;align-items:center;gap:8px;padding:14px 32px 0;
+            overflow-x:auto;border-bottom:1px solid var(--border);background:var(--dark);scrollbar-width:none}
+        .account-bar::-webkit-scrollbar{display:none}
+        .acc-tab{display:inline-flex;align-items:center;gap:6px;padding:8px 16px 10px;
+            font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;white-space:nowrap;
+            border-bottom:2px solid transparent;margin-bottom:-1px;text-decoration:none;
+            transition:color .15s,border-color .15s}
+        .acc-tab:hover{color:var(--text)}
+        .acc-tab.active{color:var(--pink);border-bottom-color:var(--pink)}
+        .acc-tab .avatar{width:20px;height:20px;border-radius:50%;background:var(--border);
+            display:grid;place-items:center;font-size:10px;font-weight:700;flex-shrink:0}
+        .acc-tab.active .avatar{background:rgba(251,114,153,.25);color:var(--pink)}
 
-        /* ── KPI 卡片 ── */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
-            gap: 12px;
-        }
-        .kpi-card {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: 14px; padding: 18px 16px;
-            position: relative; overflow: hidden;
-            transition: transform .2s, border-color .2s;
-        }
-        .kpi-card:hover { transform: translateY(-2px); border-color: var(--pink); }
-        .kpi-card.accent { border-color: rgba(251,114,153,.4); background: rgba(251,114,153,.07); }
-        .kpi-card .icon {
-            font-size: 18px; margin-bottom: 10px; display: block;
-        }
-        .kpi-card .label {
-            font-size: 11px; color: var(--muted); margin-bottom: 6px;
-        }
-        .kpi-card .value {
-            font-family: 'DM Mono', monospace;
-            font-size: 22px; font-weight: 500; color: var(--text);
-            letter-spacing: -.01em;
-        }
-        .kpi-card.accent .value { color: var(--pink); }
-        .kpi-card .glow {
-            position: absolute; bottom: -20px; right: -20px;
-            width: 70px; height: 70px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(251,114,153,.18) 0%, transparent 70%);
-        }
+        .main{max-width:1280px;margin:0 auto;padding:28px 24px 60px}
+        .section-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+            color:var(--muted);margin-bottom:14px;margin-top:36px;
+            display:flex;align-items:center;gap:8px}
+        .section-title::before{content:'';width:3px;height:13px;background:var(--pink);border-radius:2px}
 
-        /* ── 图表区 ── */
-        .chart-row { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
-        .chart-box {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: 14px; padding: 20px;
-        }
-        .chart-box .chart-title {
-            font-size: 13px; font-weight: 600; color: var(--text);
-            margin-bottom: 16px;
-        }
-        #trendChart { width: 100%; height: 280px; }
-        #pieChart   { width: 100%; height: 280px; }
+        /* KPI */
+        .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+        .kpi-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+            padding:18px 16px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
+        .kpi-card:hover{transform:translateY(-2px);border-color:var(--pink)}
+        .kpi-card.accent{border-color:rgba(251,114,153,.4);background:rgba(251,114,153,.07)}
+        .kpi-card.blue{border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.06)}
+        .kpi-card.green{border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.06)}
+        .kpi-card .icon{font-size:18px;margin-bottom:10px;display:block}
+        .kpi-card .label{font-size:11px;color:var(--muted);margin-bottom:6px}
+        .kpi-card .value{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;
+            color:var(--text);letter-spacing:-.01em}
+        .kpi-card.accent .value{color:var(--pink)}
+        .kpi-card.blue .value{color:#60a5fa}
+        .kpi-card.green .value{color:#4ade80}
+        .kpi-card .glow{position:absolute;bottom:-20px;right:-20px;width:70px;height:70px;
+            border-radius:50%;background:radial-gradient(circle,rgba(251,114,153,.18) 0%,transparent 70%)}
 
-        /* ── 榜单 ── */
-        .rank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .rank-table {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: 14px; overflow: hidden;
-        }
-        .rank-table table { width: 100%; border-collapse: collapse; }
-        .rank-table thead tr {
-            background: rgba(251,114,153,.08);
-            border-bottom: 1px solid var(--border);
-        }
-        .rank-table th {
-            padding: 11px 14px; font-size: 11px; font-weight: 700;
-            letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
-            text-align: left;
-        }
-        .rank-table td {
-            padding: 10px 14px; font-size: 13px;
-            border-bottom: 1px solid rgba(255,255,255,.04);
-        }
-        .rank-table tr:last-child td { border-bottom: none; }
-        .rank-table tbody tr:hover td { background: rgba(251,114,153,.05); }
-        .rank-no {
-            font-family: 'DM Mono', monospace;
-            font-size: 11px; font-weight: 500;
-            color: var(--muted); width: 24px;
-        }
-        .rank-no.top { color: var(--pink); }
-        .num-cell {
-            font-family: 'DM Mono', monospace; font-size: 13px;
-            color: var(--pink2); text-align: right;
-        }
-        .title-cell {
-            max-width: 160px; white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis;
-        }
+        /* 空间卡片行 */
+        .space-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+        .space-block{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+        .space-block .acc-name{font-size:12px;color:var(--muted);margin-bottom:12px;font-weight:600;letter-spacing:.05em}
+        .space-block .space-row{display:flex;justify-content:space-between;align-items:center;
+            padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+        .space-block .space-row:last-child{border-bottom:none}
+        .space-block .space-label{font-size:12px;color:var(--muted)}
+        .space-block .space-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:500}
+        .space-block .space-val.fans{color:var(--pink)}
+        .space-block .space-val.plays{color:#60a5fa}
+        .space-block .space-val.likes{color:#4ade80}
 
-        /* ── 全量数据表 ── */
-        .data-table-wrap {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: 14px; overflow: auto;
+        /* 图表 */
+        .chart-row{display:grid;grid-template-columns:1fr 320px;gap:16px}
+        .chart-row-3{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .chart-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+        .chart-box .chart-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:16px}
+        #trendChart{width:100%;height:280px}
+        #pieChart{width:100%;height:280px}
+        #fansTrendChart{width:100%;height:220px}
+
+        /* 排行 */
+        .rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .rank-table{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+        .rank-table table{width:100%;border-collapse:collapse}
+        .rank-table thead tr{background:rgba(251,114,153,.08);border-bottom:1px solid var(--border)}
+        .rank-table th{padding:11px 14px;font-size:11px;font-weight:700;letter-spacing:.08em;
+            text-transform:uppercase;color:var(--muted);text-align:left}
+        .rank-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)}
+        .rank-table tr:last-child td{border-bottom:none}
+        .rank-table tbody tr:hover td{background:rgba(251,114,153,.05)}
+        .rank-no{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--muted);width:24px}
+        .rank-no.top{color:var(--pink)}
+        .num-cell{font-family:'DM Mono',monospace;font-size:13px;color:var(--pink2);text-align:right}
+        .title-cell{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+        /* 全量表 */
+        .data-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:auto}
+        .data-table-wrap table{width:100%;border-collapse:collapse;min-width:700px}
+        .data-table-wrap thead tr{background:rgba(251,114,153,.08);border-bottom:1px solid var(--border);position:sticky;top:0}
+        .data-table-wrap th{padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.07em;
+            text-transform:uppercase;color:var(--muted);text-align:left;white-space:nowrap}
+        .data-table-wrap td{padding:9px 14px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,.04)}
+        .data-table-wrap tr:last-child td{border-bottom:none}
+        .data-table-wrap tbody tr:hover td{background:rgba(251,114,153,.04)}
+        .mono{font-family:'DM Mono',monospace;color:var(--muted);font-size:11px}
+        .bar-wrap{display:flex;align-items:center;gap:8px}
+        .bar-bg{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px}
+        .bar-fill{height:100%;background:var(--pink);border-radius:2px}
+        .tag-num{font-family:'DM Mono',monospace;font-size:12px;white-space:nowrap}
+
+        @media(max-width:800px){
+            .chart-row,.chart-row-3,.rank-grid{grid-template-columns:1fr}
+            .topbar{padding:14px 16px}
+            .account-bar{padding:12px 16px 0}
+            .main{padding:20px 14px 60px}
         }
-        .data-table-wrap table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        .data-table-wrap thead tr {
-            background: rgba(251,114,153,.08);
-            border-bottom: 1px solid var(--border);
-            position: sticky; top: 0;
-        }
-        .data-table-wrap th {
-            padding: 10px 14px; font-size: 11px; font-weight: 700;
-            letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
-            text-align: left; white-space: nowrap;
-        }
-        .data-table-wrap td {
-            padding: 9px 14px; font-size: 12.5px;
-            border-bottom: 1px solid rgba(255,255,255,.04);
-        }
-        .data-table-wrap tr:last-child td { border-bottom: none; }
-        .data-table-wrap tbody tr:hover td { background: rgba(251,114,153,.04); }
-        .data-table-wrap .mono {
-            font-family: 'DM Mono', monospace; color: var(--muted); font-size: 11px;
-        }
-        .bar-wrap { display: flex; align-items: center; gap: 8px; }
-        .bar-bg {
-            flex: 1; height: 4px; background: var(--border);
-            border-radius: 2px; overflow: hidden; min-width: 40px;
-        }
-        .bar-fill { height: 100%; background: var(--pink); border-radius: 2px; }
-        .tag-num { font-family: 'DM Mono', monospace; font-size: 12px; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -187,23 +131,60 @@
         <div class="dot">B</div>
         <span>哔哩哔哩数据看板</span>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;">
-        {% if not has_growth %}
-        <span class="badge-warn">⚠ 首次运行，显示累计播放量</span>
-        {% endif %}
+    <div class="topbar-right">
+        {% if not has_growth %}<span class="badge-warn">⚠ 首次运行，显示累计播放量</span>{% endif %}
         <span class="topbar-date">{{ latest_date }}</span>
     </div>
 </div>
 
+<div class="account-bar">
+    <a class="acc-tab {% if selected=='all' %}active{% endif %}" href="?account=all">
+        <span class="avatar">全</span>全部账号
+    </a>
+    {% for acc in all_accounts %}
+    <a class="acc-tab {% if selected==acc %}active{% endif %}" href="?account={{ acc | urlencode }}">
+        <span class="avatar">{{ acc[0] }}</span>{{ acc }}
+    </a>
+    {% endfor %}
+</div>
+
 <div class="main">
 
-    <!-- KPI -->
-    <div class="section-title">核心指标</div>
+    <!-- 空间数据 -->
+    {% if space_cards %}
+    <div class="section-title">账号空间数据</div>
+    <div class="space-grid">
+        {% for s in space_cards %}
+        <div class="space-block">
+            <div class="acc-name">{{ s.账号 }}</div>
+            <div class="space-row">
+                <span class="space-label">粉丝数</span>
+                <span class="space-val fans">{{ s.粉丝数 }}</span>
+            </div>
+            <div class="space-row">
+                <span class="space-label">关注数</span>
+                <span class="space-val">{{ s.关注数 }}</span>
+            </div>
+            <div class="space-row">
+                <span class="space-label">获赞数</span>
+                <span class="space-val likes">{{ s.获赞数 }}</span>
+            </div>
+            <div class="space-row">
+                <span class="space-label">总播放数</span>
+                <span class="space-val plays">{{ s.播放数 }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 视频 KPI -->
+    <div class="section-title">视频核心指标</div>
     <div class="kpi-grid">
         <div class="kpi-card accent">
             <span class="icon">▶</span>
             <div class="label">总播放量</div>
-            <div class="value" id="kv-play">{{ total_plays }}</div>
+            <div class="value">{{ total_plays }}</div>
             <div class="glow"></div>
         </div>
         {% if has_growth %}
@@ -213,43 +194,21 @@
             <div class="value">{{ total_growth }}</div>
         </div>
         {% endif %}
-        <div class="kpi-card">
-            <span class="icon">👍</span>
-            <div class="label">点赞</div>
-            <div class="value">{{ total_likes }}</div>
-        </div>
-        <div class="kpi-card">
-            <span class="icon">💬</span>
-            <div class="label">评论</div>
-            <div class="value">{{ total_comments }}</div>
-        </div>
-        <div class="kpi-card">
-            <span class="icon">🪙</span>
-            <div class="label">投币</div>
-            <div class="value">{{ total_coins }}</div>
-        </div>
-        <div class="kpi-card">
-            <span class="icon">⭐</span>
-            <div class="label">收藏</div>
-            <div class="value">{{ total_collect }}</div>
-        </div>
-        <div class="kpi-card">
-            <span class="icon">↗</span>
-            <div class="label">分享</div>
-            <div class="value">{{ total_share }}</div>
-        </div>
-        <div class="kpi-card">
-            <span class="icon">⚡</span>
-            <div class="label">弹幕</div>
-            <div class="value">{{ total_danmu }}</div>
-        </div>
+        <div class="kpi-card"><span class="icon">👍</span><div class="label">点赞</div><div class="value">{{ total_likes }}</div></div>
+        <div class="kpi-card"><span class="icon">💬</span><div class="label">评论</div><div class="value">{{ total_comments }}</div></div>
+        <div class="kpi-card"><span class="icon">🪙</span><div class="label">投币</div><div class="value">{{ total_coins }}</div></div>
+        <div class="kpi-card"><span class="icon">⭐</span><div class="label">收藏</div><div class="value">{{ total_collect }}</div></div>
+        <div class="kpi-card"><span class="icon">↗</span><div class="label">分享</div><div class="value">{{ total_share }}</div></div>
+        <div class="kpi-card"><span class="icon">⚡</span><div class="label">弹幕</div><div class="value">{{ total_danmu }}</div></div>
     </div>
 
-    <!-- 趋势 + 互动分布 -->
+    <!-- 趋势 -->
     <div class="section-title">数据趋势</div>
     <div class="chart-row">
         <div class="chart-box">
-            <div class="chart-title">播放趋势</div>
+            <div class="chart-title">播放趋势
+                {% if selected=='all' %}<span style="color:var(--muted);font-size:11px;font-weight:400;margin-left:8px">所有账号叠加</span>{% endif %}
+            </div>
             <div id="trendChart"></div>
         </div>
         <div class="chart-box">
@@ -258,153 +217,168 @@
         </div>
     </div>
 
-    <!-- 排行榜 -->
-    <div class="section-title">排行榜</div>
-    <div class="rank-grid">
+    <!-- 粉丝趋势（有多天数据时显示） -->
+    <div id="fansTrendSection" style="display:none;margin-top:16px">
+        <div class="chart-box">
+            <div class="chart-title">粉丝数趋势</div>
+            <div id="fansTrendChart"></div>
+        </div>
+    </div>
 
+    <!-- 排行榜 Top10 -->
+    <div class="section-title">排行榜 Top 10</div>
+    <div class="rank-grid">
         <div class="rank-table">
             <table>
-                <thead><tr>
-                    <th></th><th>账号</th>
-                    <th style="text-align:right">{{ "播放增长" if has_growth else "播放量" }}</th>
-                </tr></thead>
+                <thead><tr><th></th><th>账号</th><th style="text-align:right">{{ "播放增长" if has_growth else "播放量" }}</th></tr></thead>
                 <tbody>
                 {% for row in account_rank %}
                 <tr>
-                    <td><span class="rank-no {% if loop.index <= 3 %}top{% endif %}">
-            {{ loop.index }}
-          </span></td>
+                    <td><span class="rank-no {% if loop.index<=3 %}top{% endif %}">{{ loop.index }}</span></td>
                     <td>{{ row.账号 }}</td>
-                    <td class="num-cell">
-                        {{ (row.播放增长 | int) if row.播放增长 else 0 }}
-                    </td>
+                    <td class="num-cell">{{ (row.播放增长|int) if row.播放增长 else 0 }}</td>
                 </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
-
         <div class="rank-table">
             <table>
-                <thead><tr>
-                    <th></th><th>视频标题</th>
-                    <th style="text-align:right">{{ "播放增长" if has_growth else "播放量" }}</th>
-                </tr></thead>
+                <thead><tr><th></th><th>视频标题</th><th style="text-align:right">{{ "播放增长" if has_growth else "播放量" }}</th></tr></thead>
                 <tbody>
                 {% for row in video_rank %}
                 <tr>
-                    <td><span class="rank-no {% if loop.index <= 3 %}top{% endif %}">
-            {{ loop.index }}
-          </span></td>
+                    <td><span class="rank-no {% if loop.index<=3 %}top{% endif %}">{{ loop.index }}</span></td>
                     <td class="title-cell" title="{{ row.标题 }}">{{ row.标题 }}</td>
                     <td class="num-cell">
-                        {% if has_growth %}
-                        {{ (row.播放增长 | int) if row.播放增长 else 0 }}
-                        {% else %}
-                        {{ (row.播放量 | int) if row.播放量 else 0 }}
-                        {% endif %}
+                        {% if has_growth %}{{ (row.播放增长|int) if row.播放增长 else 0 }}
+                        {% else %}{{ (row.播放量|int) if row.播放量 else 0 }}{% endif %}
                     </td>
                 </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
-
     </div>
 
     <!-- 全量数据 -->
     <div class="section-title">全部视频数据</div>
     <div class="data-table-wrap" id="fullTable"></div>
 
-</div><!-- /main -->
+</div>
 
 <script>
-    // ── 趋势图 ──────────────────────────────────────────────────────
-    var trendData = {{ trend | safe }};
-    var trendDates  = trendData.map(function(d){ return d["日期"]; });
-    var trendValues = trendData.map(function(d){ return d["播放增长"] || 0; });
-
-    var tc = echarts.init(document.getElementById('trendChart'), null, {renderer:'canvas'});
+    // ── 播放趋势 ──────────────────────────────────────────────────────
+    var trendRaw  = {{ trend | safe }};
+    var colors    = ['#fb7299','#4ade80','#60a5fa','#facc15','#c084fc','#f97316'];
+    var accountMap = {};
+    trendRaw.forEach(function(d){
+        var acc = d["账号"];
+        if (!accountMap[acc]) accountMap[acc] = {};
+        accountMap[acc][d["日期"]] = d["播放增长"] || 0;
+    });
+    var allDates = [...new Set(trendRaw.map(function(d){ return d["日期"]; }))].sort();
+    var accs = Object.keys(accountMap);
+    var series = accs.map(function(acc, i){
+        return {
+            name: acc, type:'line', smooth:true, symbol:'circle', symbolSize:5,
+            data: allDates.map(function(d){ return accountMap[acc][d]||0; }),
+            itemStyle:{ color:colors[i%colors.length] },
+            lineStyle:{ color:colors[i%colors.length], width:2 },
+            areaStyle: accs.length===1 ? { color:{ type:'linear',x:0,y:0,x2:0,y2:1,
+                    colorStops:[{offset:0,color:'rgba(251,114,153,.25)'},{offset:1,color:'rgba(251,114,153,0)'}] }} : undefined
+        };
+    });
+    var tc = echarts.init(document.getElementById('trendChart'));
     tc.setOption({
-        backgroundColor: 'transparent',
-        tooltip: { trigger:'axis', backgroundColor:'#1a1a22', borderColor:'#2a2a38',
-            textStyle:{ color:'#e8e8f0', fontSize:12 } },
-        grid: { top:10, right:10, bottom:28, left:50 },
-        xAxis: { type:'category', data:trendDates,
-            axisLine:{ lineStyle:{ color:'#2a2a38' } },
-            axisTick:{ show:false },
-            axisLabel:{ color:'#7878a0', fontSize:11 } },
-        yAxis: { type:'value',
-            splitLine:{ lineStyle:{ color:'#2a2a38', type:'dashed' } },
-            axisLabel:{ color:'#7878a0', fontSize:11 } },
-        series:[{
-            data: trendValues, type:'line', smooth:true,
-            symbol:'circle', symbolSize:5,
-            itemStyle:{ color:'#fb7299' },
-            lineStyle:{ color:'#fb7299', width:2 },
-            areaStyle:{ color:{ type:'linear', x:0,y:0,x2:0,y2:1,
-                    colorStops:[{offset:0,color:'rgba(251,114,153,.25)'},{offset:1,color:'rgba(251,114,153,0)'}] } }
-        }]
+        backgroundColor:'transparent',
+        tooltip:{ trigger:'axis', backgroundColor:'#1a1a22', borderColor:'#2a2a38', textStyle:{color:'#e8e8f0',fontSize:12} },
+        legend: accs.length>1 ? { data:accs, bottom:0, textStyle:{color:'#7878a0',fontSize:11} } : {show:false},
+        grid:{ top:10, right:10, bottom: accs.length>1?40:28, left:50 },
+        xAxis:{ type:'category', data:allDates, axisLine:{lineStyle:{color:'#2a2a38'}}, axisTick:{show:false}, axisLabel:{color:'#7878a0',fontSize:11} },
+        yAxis:{ type:'value', splitLine:{lineStyle:{color:'#2a2a38',type:'dashed'}}, axisLabel:{color:'#7878a0',fontSize:11} },
+        series: series
     });
 
-    // ── 互动饼图 ─────────────────────────────────────────────────────
+    // ── 互动饼图 ──────────────────────────────────────────────────────
     var pieData = [
-        { value: {{ total_likes }},    name: '点赞' },
-    { value: {{ total_comments }}, name: '评论' },
-    { value: {{ total_coins }},    name: '投币' },
-    { value: {{ total_collect }},  name: '收藏' },
-    { value: {{ total_share }},    name: '分享' },
-    { value: {{ total_danmu }},    name: '弹幕' },
-    ].filter(function(d){ return d.value > 0; });
-
-    var pc = echarts.init(document.getElementById('pieChart'), null, {renderer:'canvas'});
+        {value:{{ total_likes }},    name:'点赞'},
+    {value:{{ total_comments }}, name:'评论'},
+    {value:{{ total_coins }},    name:'投币'},
+    {value:{{ total_collect }},  name:'收藏'},
+    {value:{{ total_share }},    name:'分享'},
+    {value:{{ total_danmu }},    name:'弹幕'},
+    ].filter(function(d){ return d.value>0; });
+    var pc = echarts.init(document.getElementById('pieChart'));
     pc.setOption({
-        backgroundColor: 'transparent',
-        tooltip: { trigger:'item', backgroundColor:'#1a1a22', borderColor:'#2a2a38',
-            textStyle:{ color:'#e8e8f0', fontSize:12 },
-            formatter:'{b}: {c} ({d}%)' },
-        color: ['#fb7299','#ff93b0','#ffb3c6','#ffd6e2','#4ade80','#facc15'],
-        series:[{
-            type:'pie', radius:['42%','68%'],
-            center:['50%','52%'],
-            data: pieData,
-            label:{ color:'#7878a0', fontSize:11 },
-            emphasis:{ itemStyle:{ shadowBlur:12, shadowColor:'rgba(251,114,153,.4)' } }
-        }]
+        backgroundColor:'transparent',
+        tooltip:{ trigger:'item', backgroundColor:'#1a1a22', borderColor:'#2a2a38', textStyle:{color:'#e8e8f0',fontSize:12}, formatter:'{b}: {c} ({d}%)' },
+        color:['#fb7299','#4ade80','#60a5fa','#facc15','#c084fc','#f97316'],
+        series:[{ type:'pie', radius:['42%','68%'], center:['50%','52%'], data:pieData,
+            label:{color:'#7878a0',fontSize:11},
+            emphasis:{itemStyle:{shadowBlur:12,shadowColor:'rgba(251,114,153,.4)'}} }]
     });
+
+    // ── 粉丝趋势 ──────────────────────────────────────────────────────
+    var fansRaw = {{ space_trend | safe }};
+    if (fansRaw.length > 1) {
+        document.getElementById('fansTrendSection').style.display = 'block';
+        var fansAccMap = {};
+        fansRaw.forEach(function(d){
+            var acc = d["账号"];
+            if (!fansAccMap[acc]) fansAccMap[acc] = {};
+            fansAccMap[acc][d["日期"]] = d["粉丝数"] || 0;
+        });
+        var fansDates = [...new Set(fansRaw.map(function(d){ return d["日期"]; }))].sort();
+        var fansAccs  = Object.keys(fansAccMap);
+        var fansSeries = fansAccs.map(function(acc, i){
+            return {
+                name:acc, type:'line', smooth:true, symbol:'circle', symbolSize:5,
+                data: fansDates.map(function(d){ return fansAccMap[acc][d]||0; }),
+                itemStyle:{ color:colors[i%colors.length] },
+                lineStyle:{ color:colors[i%colors.length], width:2 }
+            };
+        });
+        var fc = echarts.init(document.getElementById('fansTrendChart'));
+        fc.setOption({
+            backgroundColor:'transparent',
+            tooltip:{ trigger:'axis', backgroundColor:'#1a1a22', borderColor:'#2a2a38', textStyle:{color:'#e8e8f0',fontSize:12} },
+            legend: fansAccs.length>1 ? { data:fansAccs, bottom:0, textStyle:{color:'#7878a0',fontSize:11} } : {show:false},
+            grid:{ top:10, right:10, bottom: fansAccs.length>1?40:28, left:60 },
+            xAxis:{ type:'category', data:fansDates, axisLine:{lineStyle:{color:'#2a2a38'}}, axisTick:{show:false}, axisLabel:{color:'#7878a0',fontSize:11} },
+            yAxis:{ type:'value', splitLine:{lineStyle:{color:'#2a2a38',type:'dashed'}}, axisLabel:{color:'#7878a0',fontSize:11} },
+            series: fansSeries
+        });
+        window.addEventListener('resize', function(){ fc.resize(); });
+    }
 
     // ── 全量数据表 ────────────────────────────────────────────────────
     var tableData = {{ table_data | safe }};
+    var selected  = "{{ selected }}";
     if (tableData.length === 0) {
         document.getElementById('fullTable').innerHTML = '<p style="padding:20px;color:#7878a0">暂无数据</p>';
     } else {
-        var maxPlay = Math.max.apply(null, tableData.map(function(r){ return r['播放量'] || 0; }));
-        var cols = ['BV号','标题','播放量','点赞','弹幕','评论','投币','收藏','分享'];
-        var headers = cols.map(function(c){
-            return '<th>' + c + '</th>';
-        }).join('');
-
+        var maxPlay = Math.max.apply(null, tableData.map(function(r){ return r['播放量']||0; }));
+        var cols = ['账号','BV号','标题','播放量','点赞','弹幕','评论','投币','收藏','分享'];
+        if (selected !== 'all') cols = cols.filter(function(c){ return c!=='账号'; });
+        var headers = cols.map(function(c){ return '<th>'+c+'</th>'; }).join('');
         var rows = tableData.map(function(r){
             var cells = cols.map(function(c){
-                if (c === 'BV号') return '<td class="mono">' + (r[c]||'') + '</td>';
-                if (c === '标题') return '<td class="title-cell" style="max-width:200px" title="'+(r[c]||'')+'">' + (r[c]||'-') + '</td>';
-                if (c === '播放量') {
-                    var v = r[c] || 0;
-                    var pct = maxPlay > 0 ? (v / maxPlay * 100).toFixed(1) : 0;
+                if (c==='BV号') return '<td class="mono">'+(r[c]||'')+'</td>';
+                if (c==='标题') return '<td class="title-cell" style="max-width:220px" title="'+(r[c]||'')+'">'+(r[c]||'-')+'</td>';
+                if (c==='播放量'){
+                    var v=r[c]||0, pct=maxPlay>0?(v/maxPlay*100).toFixed(1):0;
                     return '<td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%"></div></div><span class="tag-num">'+v+'</span></div></td>';
                 }
-                return '<td class="num-cell">' + (r[c] !== null && r[c] !== undefined ? r[c] : '-') + '</td>';
+                return '<td class="num-cell">'+(r[c]!==null&&r[c]!==undefined?r[c]:'-')+'</td>';
             }).join('');
-            return '<tr>' + cells + '</tr>';
+            return '<tr>'+cells+'</tr>';
         }).join('');
-
         document.getElementById('fullTable').innerHTML =
-            '<table><thead><tr>' + headers + '</tr></thead><tbody>' + rows + '</tbody></table>';
+            '<table><thead><tr>'+headers+'</tr></thead><tbody>'+rows+'</tbody></table>';
     }
 
-    window.addEventListener('resize', function(){
-        tc.resize(); pc.resize();
-    });
+    window.addEventListener('resize', function(){ tc.resize(); pc.resize(); });
 </script>
 </body>
 </html>
